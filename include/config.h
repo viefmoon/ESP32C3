@@ -3,12 +3,12 @@
 
 // Configuración de pines
 #define ONE_WIRE_BUS     2     // GPIO2 para OneWire
-#define I2C_SDA_PIN      1     // GPIO1 para SDA
-#define I2C_SCL_PIN      0     // GPIO0 para SCL
+#define I2C_SDA_PIN 1
+#define I2C_SCL_PIN 0
 
 // Configuración WiFi
-#define WIFI_SSID       "TU_SSID"
-#define WIFI_PASSWORD   "TU_PASSWORD"
+#define WIFI_SSID       "INFINITUM0439"
+#define WIFI_PASSWORD   "3XhdAUXEuP"
 
 // Configuración NTP
 #define NTP_SERVER      "pool.ntp.org"
@@ -16,7 +16,7 @@
 #define DAYLIGHT_OFFSET 0          // Ajuste para horario de verano
 
 // Otras configuraciones
-#define SERIAL_BAUD     9600       // Velocidad del puerto serial
+#define SERIAL_BAUD     115200       // Velocidad del puerto serial
 #define SYNC_INTERVAL   3600000    // Intervalo de sincronización en milisegundos (1 hora)
 
 // Configuración Deep Sleep
@@ -24,8 +24,8 @@
 #define TIME_TO_SLEEP   300        // Tiempo de sueño en segundos (5 minutos = 300 segundos)
 
 // Activación de sensores
-#define ENABLE_SHT40    true       // Activar/desactivar sensor SHT40
-#define ENABLE_DS18B20  true       // Activar/desactivar sensores DS18B20
+#define ENABLE_SHT40    false       // Activar/desactivar sensor SHT40
+#define ENABLE_DS18B20  false       // Activar/desactivar sensores DS18B20
 #define MAX_DS18B20     4          // Número máximo de sensores DS18B20 a buscar
 
 // Banderas de control
@@ -47,5 +47,11 @@
 #define UNIT_CELSIUS           "°C"
 #define UNIT_HUMIDITY          "%RH"
 #define UNIT_TIMESTAMP         "UTC"
+
+// Definiciones de pines SPI
+#define SPI_SCK_PIN     10    // Pin de reloj SPI
+#define SPI_MISO_PIN    6     // Pin MISO (Master In Slave Out)
+#define SPI_MOSI_PIN    7     // Pin MOSI (Master Out Slave In)
+#define SPI_CS_PIN      -1    // Pin CS (Chip Select) - No usado globalmente
 
 #endif // CONFIG_H 

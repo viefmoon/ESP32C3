@@ -9,7 +9,7 @@ bool PT1000Sensor::begin() {
     ioExpander.pinMode(csPin, OUTPUT);
     ioExpander.digitalWrite(csPin, HIGH);
 
-    if (!max31865.begin(MAX31865_3WIRE)) {
+    if (!max31865.begin(MAX31865_4WIRE)) {
         Serial.println("No se pudo inicializar el MAX31865");
         enabled = false;
         return false;

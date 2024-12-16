@@ -38,7 +38,8 @@ enum {
 
 class PCA9555 {
 public:
-    PCA9555(uint8_t address, int interruptPin = -1);     // optional interrupt pin in second argument
+    PCA9555(uint8_t address, int sda, int scl, int interruptPin = -1);
+    PCA9555(uint8_t address, int interruptPin = -1);
     void pinMode(uint8_t pin, uint8_t IOMode );          // pinMode
     uint8_t digitalRead(uint8_t pin);                    // digitalRead
     void digitalWrite(uint8_t pin, uint8_t value );      // digitalWrite
@@ -80,6 +81,8 @@ private:
     };
     uint8_t _address;                                    // address of port this class is supporting
     int _error;                                          // error code from I2C
+    int _sda;
+    int _scl;
 };
 
 

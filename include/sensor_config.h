@@ -18,19 +18,16 @@ struct DS18B20Config {
     const char* id;
     const char* name;
     DeviceAddress address;
-    uint8_t resolution;  // 9-12 bits
 };
 
 struct SHT40Config {
     struct {
         const char* id;
         const char* name;
-        float offsetTemp;  // Offset de calibración
     } temperature;
     struct {
         const char* id;
         const char* name;
-        float offsetHum;   // Offset de calibración
     } humidity;
 };
 
@@ -50,10 +47,10 @@ struct FlowConfig {
 
 // Habilitación de sensores
 namespace SensorEnable {
-    constexpr bool DS18B20 = true;
-    constexpr bool SHT40 = true;
+    constexpr bool DS18B20 = false;
+    constexpr bool SHT40 = false;
     constexpr bool PT1000 = true;
-    constexpr bool FLOW = true;
+    constexpr bool FLOW = false;
 }
 
 // Configuración de los sensores DS18B20
@@ -61,26 +58,12 @@ const DS18B20Config DS18B20_CONFIGS[] = {
     {
         "DS18B20_01",
         "Sensor Temperatura 1",
-        {0x28, 0xFF, 0x64, 0x1E, 0x15, 0x21, 0x4B, 0x7C},
-        12  // resolución en bits
+        {0x28, 0xFF, 0x64, 0x1E, 0x15, 0x21, 0x4B, 0x7C}
     },
     {
         "DS18B20_02",
         "Sensor Temperatura 2",
-        {0x28, 0xFF, 0x64, 0x1E, 0x15, 0x21, 0x4B, 0x7D},
-        12
-    },
-    {
-        "DS18B20_03",
-        "Sensor Temperatura 3",
-        {0x28, 0xFF, 0x64, 0x1E, 0x15, 0x21, 0x4B, 0x7E},
-        12
-    },
-    {
-        "DS18B20_04",
-        "Sensor Temperatura 4",
-        {0x28, 0xFF, 0x64, 0x1E, 0x15, 0x21, 0x4B, 0x7F},
-        12
+        {0x28, 0xFF, 0x64, 0x1E, 0x15, 0x21, 0x4B, 0x7D}
     }
 };
 
@@ -88,13 +71,11 @@ const DS18B20Config DS18B20_CONFIGS[] = {
 const SHT40Config SHT40_CONFIG = {
     {
         "SHT40_TEMP",
-        "Sensor SHT40 Temperatura",
-        0.0f  // sin offset de temperatura
+        "Sensor SHT40 Temperatura"
     },
     {
         "SHT40_HUM",
-        "Sensor SHT40 Humedad",
-        0.0f  // sin offset de humedad
+        "Sensor SHT40 Humedad"
     }
 };
 

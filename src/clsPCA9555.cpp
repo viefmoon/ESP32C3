@@ -61,16 +61,40 @@ PCA9555::PCA9555(uint8_t address, int interruptPin) {
     }
 }
 
+PCA9555::PCA9555(uint8_t address, int sda, int scl, int interruptPin) {
+    _address = address;
+    _sda = sda;
+    _scl = scl;
+    _valueRegister = 0;
+    Wire.begin(sda, scl); // Inicia I2C con los pines especificados
+
+    if (interruptPin >= 0) {
+        instancePointer = this;
+        attachInterrupt(digitalPinToInterrupt(interruptPin), PCA9555::alertISR, LOW);
+    }
+}
+
 // Checks if PCA9555 is responsive. Refer to Wire.endTransmission() from Arduino for details.
-bool PCA9555::begin(){
+bool PCA9555::begin() {
     Wire.beginTransmission(_address);
     Wire.write(0x02); // Test Address
     _error = Wire.endTransmission();
 
-    if(_error != 0){
-      return false;
-    }else{
-      return true;
+    if (_error != 0) {
+        Serial.print("Error al inicializar PCA9555 en la dirección 0x");
+        Serial.print(_address, HEX);
+        Serial.print(": ");
+        switch (_error) {
+            case 1: Serial.println("Datos demasiado largos para el búfer de envío"); break;
+            case 2: Serial.println("Dirección NACK recibida en la transmisión"); break;
+            case 3: Serial.println("Datos NACK recibidos en la transmisión"); break;
+            case 4: Serial.println("Otro error"); break;
+            default: Serial.println("Error desconocido"); break;
+        }
+        return false;
+    } else {
+        Serial.println("PCA9555 inicializado correctamente en la dirección 0x" + String(_address, HEX));
+        return true;
     }
 }
 

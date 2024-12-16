@@ -7,28 +7,18 @@
 #include "PowerManager.h"
 #include "config.h"
 #include "sensor_config.h"
+#include "ConfigMode.h"
 
 // Create instances
 RTCManager rtcManager(WIFI_SSID, WIFI_PASSWORD, NTP_SERVER, GMT_OFFSET, DAYLIGHT_OFFSET);
 SHT40Sensor sht40;
 DS18B20Sensor ds18b20;
-PCA9555 ioExpander(0x20);
+PCA9555 ioExpander(0x20,I2C_SDA_PIN,I2C_SCL_PIN);
 PowerManager powerManager(ioExpander);
+ConfigMode configMode(ioExpander);
 PT1000Sensor pt1000(ioExpander);
 FlowSensor flowSensor(powerManager);
 
-void print_wakeup_reason() {
-    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-    
-    switch(wakeup_reason) {
-        case ESP_SLEEP_WAKEUP_TIMER:
-            Serial.println("Despertar causado por timer");
-            break;
-        default:
-            Serial.println("Inicio del sistema");
-            break;
-    }
-}
 
 void performMeasurements() {
     // Encender fuente de 3.3V para los sensores
@@ -96,29 +86,35 @@ void goToSleep() {
 }
 
 void setup() {
-    Serial.begin(SERIAL_BAUD);
-    delay(1000);
-    
-    // Verificar memoria disponible
-    uint32_t freeHeap = ESP.getFreeHeap();
-    Serial.printf("Memoria libre: %u bytes\n", freeHeap);
-    
-    print_wakeup_reason();
-    
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-    SPI.begin(10, 6, 7, -1);
+    Serial.begin(SERIAL_BAUD);
+
+    SPI.begin(SPI_SCK_PIN, SPI_MISO_PIN, SPI_MOSI_PIN, SPI_CS_PIN);
     
     bool setupSuccess = true;
-    
+
+    // Inicializar PCA9555 y PowerManager primero
+    if (!ioExpander.begin()) {
+        Serial.println("Error al inicializar PCA9555");
+        setupSuccess = false;
+    }
+
+    if (!powerManager.begin()) {
+        Serial.println("Error al inicializar PowerManager");
+        setupSuccess = false;
+    }
+
+    // Encender alimentación 3.3V antes de inicializar el RTC
+    powerManager.power3V3On();
+    delay(1000); // Esperar a que se estabilice la alimentación
+
     if (!rtcManager.begin()) {
         Serial.println("No se pudo encontrar el RTC");
         setupSuccess = false;
     }
 
-    if (!ioExpander.begin() || !powerManager.begin()) {
-        Serial.println("Error al inicializar PCA9555 o PowerManager");
-        setupSuccess = false;
-    }
+    // Inicializar modo de configuración
+    configMode.begin();
 
     // Inicializar sensor de flujo si está habilitado
     if (SensorEnable::FLOW) {
@@ -166,6 +162,12 @@ void setup() {
         ds18b20.setEnabled(false);
     }
 
+    if (!setupSuccess) {
+        Serial.println("Errores críticos en la inicialización");
+        goToSleep();
+    }
+
+    // Verificar si el RTC perdió energía
     if (rtcManager.hasLostPower()) {
         Serial.println("¡RTC perdió energía!");
         if (SHOULD_SYNC) {
@@ -173,11 +175,6 @@ void setup() {
         } else {
             rtcManager.setFallbackDateTime();
         }
-    }
-
-    if (!setupSuccess) {
-        Serial.println("Errores críticos en la inicialización");
-        goToSleep();
     }
 
     performMeasurements();
@@ -188,21 +185,28 @@ void setup() {
 }
 
 void loop() {
-    // Verificar memoria periódicamente
-    static unsigned long lastMemCheck = 0;
-    if (millis() - lastMemCheck > 60000) { // Cada minuto
-        uint32_t freeHeap = ESP.getFreeHeap();
-        Serial.printf("Memoria libre: %u bytes\n", freeHeap);
-        lastMemCheck = millis();
-    }
+    // Verificar modo de configuración
+    configMode.check();
+    
+    // Solo ejecutar la lógica normal si no estamos en modo configuración
+    if (!configMode.isActive()) {
+        // Verificar memoria periódicamente
+        static unsigned long lastMemCheck = 0;
+        if (millis() - lastMemCheck > 60000) {
+            uint32_t freeHeap = ESP.getFreeHeap();
+            Serial.printf("Memoria libre: %u bytes\n", freeHeap);
+            lastMemCheck = millis();
+        }
 
-    if (flowSensor.isEnabled() && flowSensor.isTimeToMeasure()) {
-        if (flowSensor.readSensor()) {
-            flowSensor.printMeasurements();
-            performMeasurements();
-        } else {
-            Serial.println("Error en la lectura del sensor de flujo");
+        if (flowSensor.isEnabled() && flowSensor.isTimeToMeasure()) {
+            if (flowSensor.readSensor()) {
+                flowSensor.printMeasurements();
+                performMeasurements();
+            } else {
+                Serial.println("Error en la lectura del sensor de flujo");
+            }
         }
     }
+    
     delay(10);
 }
