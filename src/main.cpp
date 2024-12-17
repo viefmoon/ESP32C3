@@ -2,7 +2,7 @@
 #include "RTCManager.h"
 #include "SHT40Sensor.h"
 #include "DS18B20Sensor.h"
-#include "PT1000Sensor.h"
+#include "PT100Sensor.h"
 #include "FlowSensor.h"
 #include "PowerManager.h"
 #include "config.h"
@@ -16,7 +16,7 @@ DS18B20Sensor ds18b20;
 PCA9555 ioExpander(0x20,I2C_SDA_PIN,I2C_SCL_PIN);
 PowerManager powerManager(ioExpander);
 ConfigMode configMode(ioExpander);
-PT1000Sensor pt1000(ioExpander);
+PT100Sensor pt100(ioExpander);
 FlowSensor flowSensor(powerManager);
 
 
@@ -49,13 +49,13 @@ void performMeasurements() {
         }
     }
 
-    // Leer y mostrar datos del PT1000 si está activado
-    if (SensorEnable::PT1000 && pt1000.isEnabled()) {
-        if (pt1000.readSensor()) {
-            pt1000.printMeasurements();
+    // Leer y mostrar datos del PT100 si está activado
+    if (SensorEnable::PT100 && pt100.isEnabled()) {
+        if (pt100.readSensor()) {
+            pt100.printMeasurements();
             anyMeasurementSuccess = true;
         } else {
-            Serial.println("Error en la lectura del PT1000");
+            Serial.println("Error en la lectura del PT100");
         }
     }
 
@@ -127,15 +127,15 @@ void setup() {
         flowSensor.setEnabled(false);
     }
 
-    // Inicializar PT1000 si está habilitado
-    if (SensorEnable::PT1000) {
-        if (!pt1000.begin()) {
-            Serial.println("Error al inicializar PT1000");
-            pt1000.setEnabled(false);
+    // Inicializar PT100 si está habilitado
+    if (SensorEnable::PT100) {
+        if (!pt100.begin()) {
+            Serial.println("Error al inicializar PT100");
+            pt100.setEnabled(false);
             setupSuccess = false;
         }
     } else {
-        pt1000.setEnabled(false);
+        pt100.setEnabled(false);
     }
 
     // Inicializar SHT40 si está habilitado

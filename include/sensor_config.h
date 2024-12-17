@@ -31,7 +31,7 @@ struct SHT40Config {
     } humidity;
 };
 
-struct PT1000Config {
+struct PT100_Config {
     const char* id;
     const char* name;
     uint16_t rRef;      // Resistencia de referencia
@@ -47,9 +47,9 @@ struct FlowConfig {
 
 // Habilitación de sensores
 namespace SensorEnable {
-    constexpr bool DS18B20 = false;
-    constexpr bool SHT40 = false;
-    constexpr bool PT1000 = true;
+    constexpr bool DS18B20 = true;
+    constexpr bool SHT40 = true;
+    constexpr bool PT100 = true;
     constexpr bool FLOW = false;
 }
 
@@ -79,12 +79,12 @@ const SHT40Config SHT40_CONFIG = {
     }
 };
 
-// Configuración del sensor PT1000
-const PT1000Config PT1000_CONFIG = {
-    "PT1000_01",
-    "Sensor PT1000 Temperatura",
-    4300,   // Resistencia de referencia
-    1000    // Resistencia nominal
+// Configuración del sensor PT100
+const PT100_Config PT100_CONFIG = {
+    "PT100_01",
+    "Sensor de Temperatura PT100",
+    430,   // Resistencia de referencia
+    100     // Resistencia nominal
 };
 
 // Configuración del sensor de flujo

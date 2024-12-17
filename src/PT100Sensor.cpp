@@ -1,8 +1,8 @@
-#include "PT1000Sensor.h"
+#include "PT100Sensor.h"
 
-bool PT1000Sensor::begin() {
+bool PT100Sensor::begin() {
     if (!enabled) {
-        Serial.println("Sensor PT1000 desactivado");
+        Serial.println("Sensor PT100 desactivado");
         return true;
     }
 
@@ -15,11 +15,11 @@ bool PT1000Sensor::begin() {
         return false;
     }
 
-    Serial.println("MAX31865 inicializado correctamente");
+    Serial.println("MAX31865 inicializado correctamente para PT100");
     return true;
 }
 
-void PT1000Sensor::checkFault() {
+void PT100Sensor::checkFault() {
     uint8_t fault = max31865.readFault();
     if (fault) {
         Serial.print("Fault 0x"); Serial.println(fault, HEX);
@@ -45,32 +45,36 @@ void PT1000Sensor::checkFault() {
     }
 }
 
-bool PT1000Sensor::readSensor() {
+bool PT100Sensor::readSensor() {
     if (!enabled) return false;
 
-    float tempC = max31865.temperature(rNominal, rRef);
-    
-    if (isnan(tempC)) {
-        Serial.println("Error al leer temperatura del PT1000");
-        checkFault();
-        return false;
-    }
+       Serial.println("Iniciando lectura PT100...");
+       
+       float resistance = max31865.readRTD();
+       Serial.printf("RTD raw: %f\n", resistance);
+       
+       float tempC = max31865.temperature(rNominal, rRef);
+       Serial.printf("Valores usados - rNominal: %d, rRef: %d\n", rNominal, rRef);
+       
+       if (isnan(tempC)) {
+           Serial.println("Error al leer temperatura del PT100");
+           checkFault();
+           return false;
+       }
 
     unsigned long currentTime = millis();
-    tempMeasurement = Measurement(PT1000_CONFIG.id, PT1000_CONFIG.name, SensorType::TEMPERATURE);
+    tempMeasurement = Measurement(PT100_CONFIG.id, PT100_CONFIG.name, SensorType::TEMPERATURE);
     tempMeasurement.setTimestamp(currentTime);
     tempMeasurement.addVariable("Temperatura", tempC, UNIT_CELSIUS);
-    
-    float resistance = max31865.readRTD();
     tempMeasurement.addVariable("Resistencia", resistance, "Ohm");
 
     return true;
 }
 
-void PT1000Sensor::printMeasurements() {
+void PT100Sensor::printMeasurements() {
     if (!enabled) {
-        Serial.println("Sensor PT1000 desactivado");
+        Serial.println("Sensor PT100 desactivado");
         return;
     }
     tempMeasurement.print();
-} 
+}
