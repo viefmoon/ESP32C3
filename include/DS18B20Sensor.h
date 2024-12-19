@@ -54,6 +54,9 @@ public:
     // Obtener medición específica
     const Measurement* getMeasurement(size_t index) const;
     const Measurement* getMeasurementByAddress(const DeviceAddress& address) const;
+    
+    // Nuevo método para escaneo
+    void scanBus();
 };
 
 #endif 

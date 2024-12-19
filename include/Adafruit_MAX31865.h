@@ -52,8 +52,8 @@
 #include "WProgram.h"
 #endif
 
-#include <Adafruit_SPIDevice.h>
-
+#include <Adafruit_SPIDevice.h>1
+#include "clsPCA9555.h"
 typedef enum max31865_numwires {
   MAX31865_2WIRE = 0,
   MAX31865_3WIRE = 1,
@@ -73,6 +73,7 @@ public:
   Adafruit_MAX31865(int8_t spi_cs, int8_t spi_mosi, int8_t spi_miso,
                     int8_t spi_clk);
   Adafruit_MAX31865(int8_t spi_cs, SPIClass *theSPI = &SPI);
+  Adafruit_MAX31865(PCA9555* ioExpander, uint8_t cs_pin, int8_t spi_mosi, int8_t spi_miso, int8_t spi_clk);
 
   bool begin(max31865_numwires_t x = MAX31865_2WIRE);
 
@@ -95,6 +96,8 @@ public:
 
 private:
   Adafruit_SPIDevice spi_dev;
+  PCA9555* _ioExpander;
+  uint8_t _cs_pin;
 
   void readRegisterN(uint8_t addr, uint8_t buffer[], uint8_t n);
 

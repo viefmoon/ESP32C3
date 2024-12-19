@@ -92,10 +92,20 @@ bool PCA9555::begin() {
             default: Serial.println("Error desconocido"); break;
         }
         return false;
-    } else {
-        Serial.println("PCA9555 inicializado correctamente en la dirección 0x" + String(_address, HEX));
-        return true;
-    }
+    } 
+
+    // Inicializar todos los registros
+    _valueRegister = 0x0000;          // Todos los pines de salida a 0
+    _configurationRegister = 0xFFFF;  // Todos los pines como entradas (1)
+    
+    // Escribir configuración inicial
+    I2CSetValue(_address, NXP_OUTPUT, _valueRegister_low);
+    I2CSetValue(_address, NXP_OUTPUT + 1, _valueRegister_high);
+    I2CSetValue(_address, NXP_CONFIG, _configurationRegister_low);
+    I2CSetValue(_address, NXP_CONFIG + 1, _configurationRegister_high);
+
+    Serial.println("PCA9555 inicializado correctamente en la dirección 0x" + String(_address, HEX));
+    return true;
 }
 
 /**

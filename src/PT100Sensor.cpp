@@ -1,72 +1,77 @@
 #include "PT100Sensor.h"
 
+PT100Sensor::PT100Sensor(PCA9555& ioExpander) : 
+    thermo(&ioExpander, P04, SPI_MOSI_PIN, SPI_MISO_PIN, SPI_SCK_PIN),
+    measurement(PT100_CONFIG.id, PT100_CONFIG.name, SensorType::TEMPERATURE),
+    enabled(SensorEnable::PT100),
+    rRef(PT100_CONFIG.rRef),
+    rNominal(PT100_CONFIG.rNominal) {
+}
+
 bool PT100Sensor::begin() {
     if (!enabled) {
         Serial.println("Sensor PT100 desactivado");
         return true;
     }
 
-    ioExpander.pinMode(csPin, OUTPUT);
-    ioExpander.digitalWrite(csPin, HIGH);
-
-    if (!max31865.begin(MAX31865_4WIRE)) {
-        Serial.println("No se pudo inicializar el MAX31865");
-        enabled = false;
+    if (!thermo.begin(MAX31865_4WIRE)) {
+        Serial.println("Error al inicializar el sensor PT100");
         return false;
     }
 
-    Serial.println("MAX31865 inicializado correctamente para PT100");
-    return true;
-}
+    Serial.println("\n=== Información del Sensor PT100 ===");
+    Serial.print("ID: ");
+    Serial.print(PT100_CONFIG.id);
+    Serial.print(" - Nombre: ");
+    Serial.println(PT100_CONFIG.name);
+    Serial.println("===================================");
 
-void PT100Sensor::checkFault() {
-    uint8_t fault = max31865.readFault();
-    if (fault) {
-        Serial.print("Fault 0x"); Serial.println(fault, HEX);
-        if (fault & MAX31865_FAULT_HIGHTHRESH) {
-            Serial.println("RTD High Threshold");
-        }
-        if (fault & MAX31865_FAULT_LOWTHRESH) {
-            Serial.println("RTD Low Threshold");
-        }
-        if (fault & MAX31865_FAULT_REFINLOW) {
-            Serial.println("REFIN- > 0.85 x Bias");
-        }
-        if (fault & MAX31865_FAULT_REFINHIGH) {
-            Serial.println("REFIN- < 0.85 x Bias - FORCE- open");
-        }
-        if (fault & MAX31865_FAULT_RTDINLOW) {
-            Serial.println("RTDIN- < 0.85 x Bias - FORCE- open");
-        }
-        if (fault & MAX31865_FAULT_OVUV) {
-            Serial.println("Under/Over voltage");
-        }
-        max31865.clearFault();
-    }
+    return true;
 }
 
 bool PT100Sensor::readSensor() {
     if (!enabled) return false;
 
-       Serial.println("Iniciando lectura PT100...");
-       
-       float resistance = max31865.readRTD();
-       Serial.printf("RTD raw: %f\n", resistance);
-       
-       float tempC = max31865.temperature(rNominal, rRef);
-       Serial.printf("Valores usados - rNominal: %d, rRef: %d\n", rNominal, rRef);
-       
-       if (isnan(tempC)) {
-           Serial.println("Error al leer temperatura del PT100");
-           checkFault();
-           return false;
-       }
+    uint16_t rtd = thermo.readRTD();
+    float ratio = rtd;
+    ratio /= 32768;
+    float resistance = rRef * ratio;
+    float temperature = thermo.temperature(rNominal, rRef);
 
+    // Verificar si hay errores
+    uint8_t fault = readFault();
+    if (fault) {
+        Serial.print("Fault 0x"); Serial.println(fault, HEX);
+        if (fault & MAX31865_FAULT_HIGHTHRESH) {
+            Serial.println("RTD High Threshold"); 
+        }
+        if (fault & MAX31865_FAULT_LOWTHRESH) {
+            Serial.println("RTD Low Threshold"); 
+        }
+        if (fault & MAX31865_FAULT_REFINLOW) {
+            Serial.println("REFIN- > 0.85 x Bias"); 
+        }
+        if (fault & MAX31865_FAULT_REFINHIGH) {
+            Serial.println("REFIN- < 0.85 x Bias - FORCE- open"); 
+        }
+        if (fault & MAX31865_FAULT_RTDINLOW) {
+            Serial.println("RTDIN- < 0.85 x Bias - FORCE- open"); 
+        }
+        if (fault & MAX31865_FAULT_OVUV) {
+            Serial.println("Under/Over voltage"); 
+        }
+        clearFault();
+        return false;
+    }
+
+    // Actualizar medición
     unsigned long currentTime = millis();
-    tempMeasurement = Measurement(PT100_CONFIG.id, PT100_CONFIG.name, SensorType::TEMPERATURE);
-    tempMeasurement.setTimestamp(currentTime);
-    tempMeasurement.addVariable("Temperatura", tempC, UNIT_CELSIUS);
-    tempMeasurement.addVariable("Resistencia", resistance, "Ohm");
+    measurement = Measurement(PT100_CONFIG.id, PT100_CONFIG.name, SensorType::TEMPERATURE);
+    measurement.setTimestamp(currentTime);
+    measurement.addVariable("Temperatura", temperature, UNIT_CELSIUS);
+    measurement.addVariable("Resistencia", resistance, "Ohm");
+    measurement.addVariable("RTD", rtd, "raw");
+    measurement.addVariable("Ratio", ratio, "ratio");
 
     return true;
 }
@@ -76,5 +81,18 @@ void PT100Sensor::printMeasurements() {
         Serial.println("Sensor PT100 desactivado");
         return;
     }
-    tempMeasurement.print();
+    measurement.print();
 }
+
+void PT100Sensor::setWires(max31865_numwires_t wires) {
+    if (!enabled) return;
+    thermo.setWires(wires);
+}
+
+uint8_t PT100Sensor::readFault() {
+    return thermo.readFault();
+}
+
+void PT100Sensor::clearFault() {
+    thermo.clearFault();
+} 

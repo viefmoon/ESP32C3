@@ -135,4 +135,41 @@ const Measurement* DS18B20Sensor::getMeasurementByAddress(const DeviceAddress& a
         }
     }
     return nullptr;
+}
+
+void DS18B20Sensor::scanBus() {
+    Serial.println("\n=== Escaneando bus OneWire para sensores DS18B20 ===");
+    
+    sensors.begin();
+    DeviceAddress tempAddress;
+    uint8_t deviceCount = sensors.getDeviceCount();
+    
+    if (deviceCount == 0) {
+        Serial.println("No se encontraron dispositivos en el bus");
+        return;
+    }
+    
+    Serial.print("Dispositivos encontrados: ");
+    Serial.println(deviceCount);
+    Serial.println("\nDirecciones encontradas:");
+    
+    for (uint8_t i = 0; i < deviceCount; i++) {
+        if (sensors.getAddress(tempAddress, i)) {
+            Serial.print(i);
+            Serial.print(") ");
+            // Imprime la dirección en formato hexadecimal
+            for (uint8_t j = 0; j < 8; j++) {
+                if (tempAddress[j] < 16) Serial.print("0");
+                Serial.print(tempAddress[j], HEX);
+            }
+            
+            // Imprime la temperatura actual del sensor
+            float tempC = sensors.getTempC(tempAddress);
+            Serial.print(" - Temperatura actual: ");
+            Serial.print(tempC);
+            Serial.println("°C");
+        }
+    }
+    Serial.println("\nCopia estas direcciones para usarlas en tu configuración");
+    Serial.println("=== Fin del escaneo ===\n");
 } 

@@ -56,8 +56,24 @@ Adafruit_MAX31865::Adafruit_MAX31865(int8_t spi_cs, SPIClass *theSPI)
     @return True
 */
 /**************************************************************************/
+
+Adafruit_MAX31865::Adafruit_MAX31865(PCA9555* ioExpander, uint8_t cs_pin, 
+                                    int8_t spi_mosi, int8_t spi_miso, int8_t spi_clk)
+    : spi_dev(-1, spi_clk, spi_miso, spi_mosi, 1000000,
+              SPI_BITORDER_MSBFIRST, SPI_MODE1) {
+    _ioExpander = ioExpander;
+    _cs_pin = cs_pin;
+}
+
 bool Adafruit_MAX31865::begin(max31865_numwires_t wires) {
   spi_dev.begin();
+  
+  // Configurar CS como salida
+  if (_ioExpander) {
+    _ioExpander->pinMode(_cs_pin, OUTPUT);
+    _ioExpander->digitalWrite(_cs_pin, HIGH);
+    delay(10); // Dar tiempo para que se estabilice
+  }
 
   setWires(wires);
   enableBias(false);
@@ -65,8 +81,6 @@ bool Adafruit_MAX31865::begin(max31865_numwires_t wires) {
   setThresholds(0, 0xFFFF);
   clearFault();
 
-  // Serial.print("config: ");
-  // Serial.println(readRegister8(MAX31865_CONFIG_REG), HEX);
   return true;
 }
 
@@ -332,16 +346,36 @@ uint16_t Adafruit_MAX31865::readRegister16(uint8_t addr) {
   return ret;
 }
 
-void Adafruit_MAX31865::readRegisterN(uint8_t addr, uint8_t buffer[],
-                                      uint8_t n) {
+void Adafruit_MAX31865::readRegisterN(uint8_t addr, uint8_t buffer[], uint8_t n) {
   addr &= 0x7F; // make sure top bit is not set
 
+  if (_ioExpander) {
+    _ioExpander->digitalWrite(_cs_pin, LOW);
+    delay(1);  
+  }
+  
   spi_dev.write_then_read(&addr, 1, buffer, n);
+  
+  if (_ioExpander) {
+    _ioExpander->digitalWrite(_cs_pin, HIGH);
+    delay(1);
+  }
 }
+
 
 void Adafruit_MAX31865::writeRegister8(uint8_t addr, uint8_t data) {
   addr |= 0x80; // make sure top bit is set
 
+  if (_ioExpander) {
+    _ioExpander->digitalWrite(_cs_pin, LOW);
+    delay(1);
+  }
+
   uint8_t buffer[2] = {addr, data};
   spi_dev.write(buffer, 2);
+  
+  if (_ioExpander) {
+    _ioExpander->digitalWrite(_cs_pin, HIGH);
+    delay(1);
+  }
 }
