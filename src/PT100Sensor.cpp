@@ -3,9 +3,7 @@
 PT100Sensor::PT100Sensor(PCA9555& ioExpander) : 
     thermo(&ioExpander, P04, SPI_MOSI_PIN, SPI_MISO_PIN, SPI_SCK_PIN),
     measurement(PT100_CONFIG.id, PT100_CONFIG.name, SensorType::TEMPERATURE),
-    enabled(SensorEnable::PT100),
-    rRef(PT100_CONFIG.rRef),
-    rNominal(PT100_CONFIG.rNominal) {
+    enabled(SensorEnable::PT100) {
 }
 
 bool PT100Sensor::begin() {
@@ -35,8 +33,8 @@ bool PT100Sensor::readSensor() {
     uint16_t rtd = thermo.readRTD();
     float ratio = rtd;
     ratio /= 32768;
-    float resistance = rRef * ratio;
-    float temperature = thermo.temperature(rNominal, rRef);
+    float resistance = R_REF * ratio;
+    float temperature = thermo.temperature(R_NOMINAL, R_REF);
 
     // Verificar si hay errores
     uint8_t fault = readFault();

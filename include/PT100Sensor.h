@@ -9,11 +9,12 @@
 
 class PT100Sensor {
 private:
+    static constexpr float R_REF = 430.0f;      // Resistencia de referencia fija
+    static constexpr float R_NOMINAL = 100.0f;   // Resistencia nominal fija a 0°C
+    
     Adafruit_MAX31865 thermo;
     Measurement measurement;
     bool enabled;
-    float rRef;      // Resistencia de referencia
-    float rNominal;  // Resistencia nominal a 0°C
     
 public:
     PT100Sensor(PCA9555& ioExpander);
